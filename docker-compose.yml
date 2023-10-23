@@ -1,0 +1,54 @@
+version: '3.7'
+volumes:
+  pgdb:
+  redisdata:
+networks:
+  testnet:
+
+services:
+  app:
+    image: node:20-alpine
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    container_name: test-app
+    restart: always
+    working_dir: /app
+    ports:
+      - 4000:4000
+    command: npm run prod
+    networks:
+      - testnet
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:13
+    restart: always
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test
+    ports:
+      - 5432:5432
+    volumes:
+      - pgdb:/var/lib/postgresql/data
+    networks:
+      - testnet
+
+  redis:
+    image: "redis:alpine"
+    ports:
+      - "6380:6379"
+    volumes:
+      - "redisdata:/data"
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      retries: 3
+      timeout: 10s
+    networks:
+      - testnet
